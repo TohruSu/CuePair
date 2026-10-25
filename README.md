@@ -1,61 +1,80 @@
 # CuePair
 
-A lightweight browser tool for reading two subtitle tracks on a shared timeline. Compare original and translated subtitles even when their cue counts, timing, or segmentation differ.
+**Compare two subtitle tracks on one timeline.**
+
+CuePair helps you review original and translated subtitles side by side, even when their timing or line breaks differ. Import your own SRT files or explore the built-in Japanese–Chinese demo.
 
 **[Try the live demo](https://tohrusu.github.io/CuePair/)**
 
 ## Features
 
-- Two local SRT imports, with filenames and cue counts.
-- Time-based comparison groups, including one-to-many and many-to-one overlaps.
-- Visible cues without a counterpart and warnings for timing overlaps within a track.
-- A shared slider, precise time entry, and navigation to the current group.
-- Unicode and multiline text, with a responsive two-column reading view.
-- An original Japanese/Chinese demo that loads without external requests.
+- **Side-by-side reading:** Compare two subtitle tracks with readable timestamps and preserved multiline text.
+- **Time-based grouping:** See one-to-one, one-to-many, and many-to-one relationships based on overlapping intervals.
+- **Clear timing cues:** Spot subtitles without a counterpart and overlaps within the same track.
+- **Shared timeline:** Seek with the slider, enter an exact time, or jump to a subtitle group.
+- **Local and responsive:** Read files directly in your browser on desktop or mobile.
 
-## Use
+## Getting started
 
-Choose an SRT file for Track A and another for Track B, or select **Load demo**. Move the shared time slider or enter `HH:MM:SS.mmm` and select **Go**. **Show group** scrolls to the group at the playhead; a group's timestamp also seeks to its start. On small screens, Track A and Track B stack with labels.
+Open the [live app](https://tohrusu.github.io/CuePair/) and select **Load demo**, or import an SRT file into **Track A** and **Track B**. You can load either track first and replace it whenever you like.
 
-Files are processed locally in your browser. Replacing a file restarts the timeline at the earliest loaded cue. A failed import keeps the last valid tracks and time position. A single imported track can be read while you choose the second.
+Move the timeline slider or enter a time in `HH:MM:SS.mmm` format and choose **Go**. Select **Show group** to jump to the subtitle group at the current time; selecting a group's timestamp seeks to its start.
 
-The bundled demo follows a short walk from a station to a river. Group 02 contains one Japanese cue and two Chinese cues. Groups 03 and 05 have no counterpart. Group 04 contains two overlapping Japanese cues, shown with timing warnings.
+The demo follows a short walk from a station to a river. It includes a one-to-many match, subtitles without counterparts, and a pair of overlapping cues worth reviewing.
 
-## Supported input
+Files stay in your browser. Replacing a track resets the timeline; an invalid file leaves the previous comparison available.
 
-Import `.srt` files directly; no CSV preparation is needed. Each file may contain up to **2 MiB (2,097,152 bytes)** and **10,000 cues**. Use UTF-8 with or without a BOM, LF or CRLF line endings, and standard `HH:MM:SS,mmm --> HH:MM:SS,mmm` timing lines. Numeric cue identifiers are optional and need not be consecutive. Separate cues with a blank line. Text, punctuation, and line breaks are retained, including formatting tags as literal text.
+## Supported SRT files
 
-Invalid timestamps, nonpositive durations, missing text, malformed blocks, invalid UTF-8, and files over the limits are rejected with an error. Legacy text encodings and other subtitle formats are not supported.
+CuePair supports UTF-8 `.srt` files, with or without a BOM, using LF or CRLF line endings. Use standard SRT timing lines such as:
+
+```text
+1
+00:00:01,000 --> 00:00:03,000
+Hello there.
+```
+
+Numeric cue identifiers are optional and may be nonconsecutive. Multiline text and Unicode are preserved, while subtitle formatting tags are displayed as text.
+
+| Limit | Per track |
+| --- | --- |
+| File size | 2 MiB |
+| Subtitles | 10,000 cues |
+
+Each cue needs valid timestamps, a positive duration, and nonempty text. Separate cues with a blank line. Invalid input produces a clear message without replacing the last successfully loaded track.
 
 ## How grouping works
 
-Cues use half-open intervals `[start, end)` in integer milliseconds. Cues from different tracks share a group when their intervals overlap, directly or through a chain of cross-track overlaps. Cues touching only at an endpoint remain separate. Every cue appears once, in its original order within its track. Groups are sorted by start, end, then source order in Track A and Track B.
+CuePair connects subtitles from different tracks when their time intervals overlap. A chain of overlaps can form a group with several cues on either side. Subtitles that only touch at a boundary remain separate, while overlaps within a single track are highlighted as timing warnings.
 
-A sweep line with a small union-find structure builds these components. It retains one representative of the active connected frontier and any active cues still waiting for a counterpart. Each waiting cue joins that frontier at most once, avoiding enumeration of dense overlap pairs. Sorting costs O(n log n); grouping uses O(n α(n)) time and O(n) memory. Same-track timing warnings are detected separately with a sorted scan.
+The comparison uses a sweep-line algorithm with union-find to build groups efficiently, preserving each cue's text and order. Groups are presented chronologically.
 
-Temporal overlap suggests a possible counterpart; it does not establish equivalent meaning. Same-track overlaps produce warnings and do not independently connect groups. Multiple isolated groups can be active at the same time; **Show first group** navigates to the first in chronological order.
+**Time overlap indicates a possible counterpart, not a verified translation.**
 
-## Development
+## Run locally
 
-Use **Node.js 22.12 or newer in the Node 22 series** and npm.
+Requires Node.js 22.12 or newer in the Node.js 22 series and npm.
 
 ```sh
 npm ci
 npm run dev
+```
+
+To run tests and preview the production build:
+
+```sh
 npm test
 npm run build
 npm run preview
 ```
 
-`npm test` runs parser, temporal grouping, and UI tests with Vitest. The grouping tests include seeded comparisons against an exhaustive reference and a dense 10,000-cue case on each track. The production build includes TypeScript checking.
+CuePair is built with React, TypeScript, Vite, and plain CSS. The Vitest suite covers SRT parsing, temporal grouping, and interface behavior, with **45 automated tests**.
 
-The implementation uses React, TypeScript, Vite, and plain CSS. Runtime dependencies are limited to React and React DOM. There is no server or persistence; reloading clears the workspace. Large imports can create long reading views, and the file limits are safeguards rather than performance guarantees. Text is displayed as plain text without rendering SRT styling tags.
+GitHub Actions runs CI checks and [deploys the site](.github/workflows/pages.yml) to GitHub Pages from `main`. For a fork, select **Settings → Pages → Build and deployment → Source → GitHub Actions**.
 
-## GitHub Pages
+## Notes
 
-The CI workflow tests and builds on pull requests and pushes to `main`, using Node.js 22. The separate Pages workflow tests, builds, and deploys `dist/` on `main` pushes or manual dispatch. It uses the official Pages artifact and deployment actions with the `github-pages` environment. Enable **Settings → Pages → Source → GitHub Actions** after creating the repository.
-
-Vite uses relative asset URLs (`base: './'`) so the build works at `https://tohrusu.github.io/CuePair/`. Do not commit `dist/` or create a `gh-pages` branch.
+CuePair handles one file per track and keeps data only for the current browser session. Large files can produce long reading views. The tool focuses on timing-based comparison and navigation rather than subtitle editing.
 
 ## License
 
