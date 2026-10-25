@@ -2,7 +2,7 @@
 
 A lightweight browser tool for reading two subtitle tracks on a shared timeline. Compare original and translated subtitles even when their cue counts, timing, or segmentation differ.
 
-**Future live demo:** [tohrusu.github.io/CuePair](https://tohrusu.github.io/CuePair/) — not yet deployed.
+**[Try the live demo](https://tohrusu.github.io/CuePair/)**
 
 ## Features
 
