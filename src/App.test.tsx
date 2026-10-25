@@ -38,7 +38,9 @@ describe('CuePair workspace', () => {
     expect(screen.queryByText('日本語', { exact: false })).toBeNull()
     expect(screen.getByText('中文')).toBeTruthy()
     expect(screen.getAllByRole('article')).toHaveLength(2)
-    expect((screen.getByRole('slider') as HTMLInputElement).value).toBe('2000')
+    await waitFor(() => {
+      expect((screen.getByRole('slider') as HTMLInputElement).value).toBe('2000')
+    })
   })
 
   it('keeps both valid tracks and the timeline after an invalid replacement', async () => {
